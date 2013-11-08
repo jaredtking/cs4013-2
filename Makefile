@@ -4,10 +4,10 @@ ODIR=obj
 LDIR=lib
 OUTDIR=bin
 TESTSDIR=tests
-OUTNAME=lexer
+OUTNAME=parser
 
 CC=gcc
-CFLAGS=-Wall -I$(IDIR)
+CFLAGS=-Wall -I$(IDIR) -g
 
 LIBS=
 
@@ -16,7 +16,7 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = $(patsubst $(SDIR)/%.c,%.o,$(wildcard $(SDIR)/*.c))
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
-OBJ_TEST = $(filter-out obj/lexer.o,$(OBJ))
+OBJ_TEST = $(filter-out obj/parser.o,$(OBJ))
 
 TESTS = $(wildcard $(TESTSDIR)/*.c)
 
@@ -32,12 +32,14 @@ $(OUTDIR)/$(OUTNAME): $(OBJ)
 
 clean:
 	rm -f $(ODIR)/*.o *~ core $(IDIR)/*~ $(OUTDIR)/$(OUTNAME) $(OUTDIR)/tests
+	rm -rf $(OUTDIR)/tests.dSYM
 
 check: $(TESTS) $(OBJ_TEST)
 	@mkdir -p $(OUTDIR)
 	gcc -o $(OUTDIR)/tests $^ `pkg-config --cflags --libs check` $(CFLAGS) $(LIBS)
 	@./$(OUTDIR)/tests
 	@rm -f $(OUTDIR)/tests
+	@rm -rf $(OUTDIR)/tests.dSYM
 
 test:
 	@make check

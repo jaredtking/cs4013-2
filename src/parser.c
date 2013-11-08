@@ -2,16 +2,23 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "token.h"
-#include "machine.h"
 
-void chomp(char *s) {
-    while(*s && *s != '\n' && *s != '\r') s++;
- 
-    *s = 0;
+void parseFile(FILE *source, FILE *tokens, FILE *listing, ReservedWord *reserved_words, SymbolTable *symbol_table) {
+
+	MachineResult *t = get_next_token(source, tokens, listing, reserved_words, symbol_table);
+
+	while (t->token->type != TOKEN_EOF)
+	{
+		// get next token
+		t = get_next_token(source, tokens, listing, reserved_words, symbol_table);
+	}
 }
 
-int main(int argc, char **argv)
-{
+void parse() {
+	
+}
+
+int main(int argc, char **argv) {
 	if (argc != 4)
 	{
 		printf ("usage: %s reserved_words_file source_file output_dir\n", argv[0]);
@@ -21,10 +28,10 @@ int main(int argc, char **argv)
 	printf("-- Lexer begin --\n");
 
 	FILE *f;
-	char line[200];
 
 	/* tokenize reserved words file */
 
+	char line[200];
 	ReservedWord *head, *curr;
 	head = NULL;
 
@@ -121,64 +128,21 @@ int main(int argc, char **argv)
 	// symbol table file header
 	fprintf (sf, "%-5s%s\n", "Loc.", "ID");
 
-	printf("Parsing source file.. ");
-
-	int i = 1;
-	int eof = 0;
-
+	// initalize symbol table
 	SymbolTable *symbol_table = (SymbolTable *)malloc(sizeof(SymbolTable));
 	symbol_table->symbol = NULL;
 	symbol_table->next = NULL;
 
-	while (!eof)
-	{
-		if (line[0] == EOF)
-			eof = 1;
-		else
-		{
-			fgets (line, 72, f);
+	printf("Parsing source file.. ");
 
-			// remove \n character
-			chomp(line);
-
-			// output line to listing file
-			if (i > 1) fprintf (lf, "\n");
-			fprintf (lf, "%-8d%s", i, line);
-		}
-
-		// tokenize line
-		MachineResult *t = get_next_token(line, reserved_words, symbol_table);;
-		while (t != NULL)
-		{
-			if (t->token->type != TOKEN_WHITESPACE)
-			{
-				// write token to tokens file
-				fprintf (tf, "%-10d%-20s%-20s%-6d(%s)\n", i, t->lexeme, token_type_to_str(t->token->type), t->token->attribute, attribute_to_str(t->token->attribute));
-
-				// output errors to listing file
-				if (t->token->type == TOKEN_LEXERR)
-					fprintf (lf, "\n%-8s%-30s%s", "LEXERR", attribute_to_str(t->token->attribute), t->lexeme);
-			}
-
-			t = get_next_token(line, reserved_words, symbol_table);
-		}
-
-		i++;
-
-		if (feof(f))
-		{
-			line[0] = EOF;
-			line[1] = '\0';
-			i--;
-		}				
-	}
+	parseFile(f, lf, tf, reserved_words, symbol_table);
 
 	fclose(lf);
 	fclose(tf);
 
 	// write ids to symbol table
 	SymbolTable *s = symbol_table;
-	i = 0;
+	int i = 0;
 	while (s != NULL && s->symbol != NULL)
 	{
 		fprintf (sf, "%-5d%s\n", i, s->symbol);

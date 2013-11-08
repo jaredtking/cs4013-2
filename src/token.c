@@ -1,20 +1,58 @@
 #include "token.h"
 #include "machine.h"
 
-MachineResult *get_next_token(char *line, ReservedWord *reserved_words, SymbolTable *symbol_table)
-{
-	static char *f;
-	static char l[72];
+void chomp(char *s) {
+    while(*s && *s != '\n' && *s != '\r') s++;
+ 
+    *s = 0;
+}
 
-	// remember where we were last by storing f internally
-	if (strcmp(line, l) != 0)
+char *get_next_line(FILE *source)
+{
+	char *line = (char *)malloc(MAX_LINE_LENGTH_1);
+
+	if (feof(source))
 	{
+		line[0] = EOF;
+		line[1] = '\0';
+	}
+	else
+	{
+		fgets (line, MAX_LINE_LENGTH, source);
+
+		// remove \n character
+		chomp(line);
+	}
+	
+	return line;
+}
+
+MachineResult *get_next_token(FILE *source, FILE *tokens, FILE *listing, ReservedWord *reserved_words, SymbolTable *symbol_table)
+{
+	// remember where we were last by saving source file pointer
+	static FILE *s;
+
+	static char l[MAX_LINE_LENGTH_1];
+	static char *f;
+	static int i = 0;
+
+	// grab another line
+	if (s != source || f - l > MAX_LINE_LENGTH || *f == 0)
+	{
+		s = source;
+
+		char *line = get_next_line(source);
+
 		strcpy(l, line);
 		f = l;
-	}
+		i++;
 
-	if (f - l > 72 || *f == 0)
-		return NULL;
+		// output line to listing file
+		if (listing != NULL) {
+			if (i > 1) fprintf (listing, "\n");
+			fprintf (listing, "%-8d%s", i, line);
+		}
+	}
 
 	MachineResult r = machine_omega(f, reserved_words, symbol_table);
 
@@ -23,6 +61,19 @@ MachineResult *get_next_token(char *line, ReservedWord *reserved_words, SymbolTa
 
 	// advance our internal pointer
 	f = r.f;
+
+	if (result->token->type == TOKEN_WHITESPACE)
+		return get_next_token(source, tokens, listing, reserved_words, symbol_table);
+
+	// write token to tokens file
+	if (tokens != NULL) {
+		fprintf (tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, result->lexeme, token_type_to_str(result->token->type), result->token->attribute, attribute_to_str(result->token->attribute));
+	}
+
+	// output errors to listing file
+	if (listing != NULL && result->token->type == TOKEN_LEXERR) {
+		fprintf (listing, "\n%-8s%-30s%s", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
+	}
 
 	return result;
 }

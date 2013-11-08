@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef enum TokenType
 {
@@ -49,6 +50,9 @@ typedef struct Token
 	int attribute;
 } Token;
 
+#define MAX_LINE_LENGTH 72
+#define MAX_LINE_LENGTH_1 73
+
 #define ATTRIBUTE_INT 999
 #define ATTRIBUTE_REAL 998
 #define ATTRIBUTE_LONGREAL 997
@@ -83,7 +87,8 @@ typedef struct MachineResult {
 	char *f;
 } MachineResult;
 
-MachineResult *get_next_token (char *line, ReservedWord *reserved_words, SymbolTable *symbol_table);
+char *get_next_line(FILE *source);
+MachineResult *get_next_token(FILE *source, FILE *tokens, FILE *listing, ReservedWord *reserved_words, SymbolTable *symbol_table);
 ReservedWord *tokenize_reserved_word_str (char *line);
 TokenType int_to_token_type (int id);
 char *token_type_to_str (TokenType type);
