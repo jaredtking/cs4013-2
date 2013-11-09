@@ -2,16 +2,16 @@
 
 int parse(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table)
 {
-	parse_program(files, reserved_words, symbol_table);
+	parse_program(PARSER_DATA);
 
-	return match(TOKEN_EOF, files, reserved_words, symbol_table);
+	return match(TOKEN_EOF, PARSER_DATA);
 
 	// TODO need way to detect if a lexerr or synerr was raised
 }
 
 int match(TokenType t, ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table)
 {
-	MachineResult *tok = get_next_token(files, reserved_words, symbol_table);
+	MachineResult *tok = get_next_token(PARSER_DATA);
 
 	if (tok->token->type == t) {
 		if (t == TOKEN_EOF)
@@ -26,16 +26,16 @@ int match(TokenType t, ParserFiles *files, ReservedWord *reserved_words, SymbolT
 
 void parse_program(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table)
 {
-	MachineResult *tok = get_next_token(files, reserved_words, symbol_table);
+	MachineResult *tok = get_next_token(PARSER_DATA);
 
 	switch (tok->token->type) {
 	case TOKEN_PROGRAM:
-		match(TOKEN_ID, files, reserved_words, symbol_table);
-		match(TOKEN_LPAREN, files, reserved_words, symbol_table);
-		parse_id_list(files, reserved_words, symbol_table);
-		match(TOKEN_RPAREN, files, reserved_words, symbol_table);
-		match(TOKEN_SEMICOLON, files, reserved_words, symbol_table);
-		parse_program_(files, reserved_words, symbol_table);
+		match(TOKEN_ID, PARSER_DATA);
+		match(TOKEN_LPAREN, PARSER_DATA);
+		parse_id_list(PARSER_DATA);
+		match(TOKEN_RPAREN, PARSER_DATA);
+		match(TOKEN_SEMICOLON, PARSER_DATA);
+		parse_program_(PARSER_DATA);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_PROGRAM}, 1, tok, files->listing);
@@ -51,11 +51,11 @@ void parse_program_(ParserFiles *files, ReservedWord *reserved_words, SymbolTabl
 
 void parse_id_list(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table)
 {
-	MachineResult *tok = get_next_token(files, reserved_words, symbol_table);
+	MachineResult *tok = get_next_token(PARSER_DATA);
 
 	switch (tok->token->type) {
 	case TOKEN_ID:
-		parse_id_list_(files, reserved_words, symbol_table);
+		parse_id_list_(PARSER_DATA);
 	break;
 	default:
 		synerr((TokenType[]){TOKEN_ID}, 1, tok, files->listing);
@@ -65,15 +65,15 @@ void parse_id_list(ParserFiles *files, ReservedWord *reserved_words, SymbolTable
 
 void parse_id_list_(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table)
 {
-	MachineResult *tok = get_next_token(files, reserved_words, symbol_table);
+	MachineResult *tok = get_next_token(PARSER_DATA);
 
 	switch (tok->token->type) {
 	case TOKEN_COMMA:
-		match(TOKEN_ID, files, reserved_words, symbol_table);
-		parse_id_list_(files, reserved_words, symbol_table);
+		match(TOKEN_ID, PARSER_DATA);
+		parse_id_list_(PARSER_DATA);
 	break;
 	case TOKEN_RPAREN:
-		// TODO
+		// TODO need a way to hang on to this token
 		// NOP
 	break;
 	default:

@@ -25,3 +25,4 @@ bin/output
 bin/lexer
 bin/tests
 bin/parser
+bin/pascal

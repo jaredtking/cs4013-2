@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include "token.h"
 
+#define PARSER_DATA files, reserved_words, symbol_table
+
 int parse(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table);
 int match(TokenType t, ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table);
 

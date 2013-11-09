@@ -4,7 +4,7 @@ ODIR=obj
 LDIR=lib
 OUTDIR=bin
 TESTSDIR=tests
-OUTNAME=parser
+OUTNAME=pascal
 
 CC=gcc
 CFLAGS=-Wall -I$(IDIR) -g
@@ -16,7 +16,7 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = $(patsubst $(SDIR)/%.c,%.o,$(wildcard $(SDIR)/*.c))
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
-OBJ_TEST = $(filter-out obj/parser.o,$(OBJ))
+OBJ_TEST = $(filter-out obj/pascal.o,$(OBJ))
 
 TESTS = $(wildcard $(TESTSDIR)/*.c)
 

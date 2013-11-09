@@ -33,6 +33,8 @@ START_TEST (test_get_token)
 	symbol_table->next = NULL;
 
 	ParserFiles *files = (ParserFiles *)malloc(sizeof(ParserFiles));
+	files->tokens = NULL;
+	files->listing = NULL;
 	files->source = fopen("tests/test_get_token.pas", "r");
 
 	ck_assert(files->source != NULL);
