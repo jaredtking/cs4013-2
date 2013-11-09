@@ -27,7 +27,7 @@ char *get_next_line(FILE *source)
 	return line;
 }
 
-MachineResult *get_next_token(FILE *source, FILE *tokens, FILE *listing, ReservedWord *reserved_words, SymbolTable *symbol_table)
+MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table)
 {
 	// remember where we were last by saving source file pointer
 	static FILE *s;
@@ -37,24 +37,23 @@ MachineResult *get_next_token(FILE *source, FILE *tokens, FILE *listing, Reserve
 	static int i = 0;
 
 	// grab another line
-	if (s != source || f - l > MAX_LINE_LENGTH || *f == 0)
+	if (s != files->source || f - l > MAX_LINE_LENGTH || *f == 0)
 	{
-		s = source;
+		s = files->source;
 
-		char *line = get_next_line(source);
+		char *line = get_next_line(files->source);
 
 		strcpy(l, line);
 		f = l;
 		i++;
 
 		// output line to listing file
-		if (listing != NULL) {
-			if (i > 1) fprintf (listing, "\n");
-			fprintf (listing, "%-8d%s", i, line);
-		}
+		if (files->listing != NULL)
+			fprintf (files->listing, "%-8d%s\n", i, line);
 	}
 
 	MachineResult r = machine_omega(f, reserved_words, symbol_table);
+	r.line_no = i;
 
 	MachineResult *result = (MachineResult *)malloc(sizeof(MachineResult));
 	memcpy(result, &r, sizeof(MachineResult));
@@ -63,17 +62,16 @@ MachineResult *get_next_token(FILE *source, FILE *tokens, FILE *listing, Reserve
 	f = r.f;
 
 	if (result->token->type == TOKEN_WHITESPACE)
-		return get_next_token(source, tokens, listing, reserved_words, symbol_table);
+		return get_next_token(files, reserved_words, symbol_table);
 
 	// write token to tokens file
-	if (tokens != NULL) {
-		fprintf (tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, result->lexeme, token_type_to_str(result->token->type), result->token->attribute, attribute_to_str(result->token->attribute));
+	if (files->tokens != NULL) {
+		fprintf (files->tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, result->lexeme, token_type_to_str(result->token->type), result->token->attribute, attribute_to_str(result->token->attribute));
 	}
 
 	// output errors to listing file
-	if (listing != NULL && result->token->type == TOKEN_LEXERR) {
-		fprintf (listing, "\n%-8s%-30s%s", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
-	}
+	if (result->token->type == TOKEN_LEXERR)
+		lexerr(result, files->listing);
 
 	return result;
 }
@@ -135,6 +133,29 @@ TokenType int_to_token_type (int id)
 	return ERR_TOKEN_NOT_FOUND;
 }
 
+int token_type_to_int (TokenType type)
+{
+	if (type == TOKEN_PROGRAM) return 1000;
+	else if (type == TOKEN_VAR) return 1001;
+	else if (type == TOKEN_ARRAY) return  1002;
+	else if (type == TOKEN_OF) return  1003;
+	else if (type == TOKEN_INTEGER) return  1004;
+	else if (type == TOKEN_REAL) return  1005;
+	else if (type == TOKEN_PROCEDURE) return  1006;
+	else if (type == TOKEN_FUNCTION) return  1007;
+	else if (type == TOKEN_BEGIN) return  1008;
+	else if (type == TOKEN_END) return  1009;
+	else if (type == TOKEN_IF) return  1010;
+	else if (type == TOKEN_THEN) return  1011;
+	else if (type == TOKEN_ELSE) return 1012;
+	else if (type == TOKEN_WHILE) return 1013;
+	else if (type == TOKEN_DO) return 1014;
+	else if (type == TOKEN_NOT) return 1015;
+	else if (type == TOKEN_ADDOP) return 1016;
+	else if (type == TOKEN_MULOP) return 1018;
+	else return 0;
+}
+
 char *token_type_to_str (TokenType type)
 {
 	if (type == TOKEN_WHITESPACE) return "WHITESPACE";
@@ -171,7 +192,7 @@ char *token_type_to_str (TokenType type)
 	else if (type == TOKEN_EOF) return "EOF";
 	else if (type == TOKEN_LEXERR) return "LEXERR";
 
-	return "NULL";		
+	return "NULL";
 }
 
 char *attribute_to_str (int attr)
@@ -202,4 +223,21 @@ char *attribute_to_str (int attr)
 	char *str = (char *)malloc(1);
 	snprintf(str, 1, "%d", attr);
 	return str;
+}
+
+void lexerr(MachineResult *result, FILE *out)
+{
+	FILE *out2 = out;
+	if (out == NULL)
+		out2 = stderr;
+
+	fprintf (out2, "%-8s%-30s%s", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
+
+	if (out == NULL)
+		fprintf (out2, " on line %d", result->line_no);
+
+	fprintf (out2, "\n");
+
+	if (out != NULL)
+		lexerr(result, NULL);
 }

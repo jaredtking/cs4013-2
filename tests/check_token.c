@@ -32,42 +32,43 @@ START_TEST (test_get_token)
 	symbol_table->symbol = NULL;
 	symbol_table->next = NULL;
 
-	FILE *source = fopen("tests/test_get_token.pas", "r");
+	ParserFiles *files = (ParserFiles *)malloc(sizeof(ParserFiles));
+	files->source = fopen("tests/test_get_token.pas", "r");
 
-	ck_assert(source != NULL);
+	ck_assert(files->source != NULL);
 
 	// program
-	MachineResult *res = get_next_token (source, NULL, NULL, reserved_words, symbol_table);
+	MachineResult *res = get_next_token (files, reserved_words, symbol_table);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_PROGRAM);
 	ck_assert(res->token->attribute == 0);
 
 	// test
-	res = get_next_token (source, NULL, NULL, reserved_words, symbol_table);
+	res = get_next_token (files, reserved_words, symbol_table);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_ID);
 	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 
 	// #
-	res = get_next_token (source, NULL, NULL, reserved_words, symbol_table);
+	res = get_next_token (files, reserved_words, symbol_table);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_NO_MATCH);
 
 	// @
-	res = get_next_token (source, NULL, NULL, reserved_words, symbol_table);
+	res = get_next_token (files, reserved_words, symbol_table);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_NO_MATCH);
 
 	// integer
-	res = get_next_token (source, NULL, NULL, reserved_words, symbol_table);
+	res = get_next_token (files, reserved_words, symbol_table);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_INT_TOO_LONG);
 
 	// real
-	res = get_next_token (source, NULL, NULL, reserved_words, symbol_table);
+	res = get_next_token (files, reserved_words, symbol_table);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_REAL_YY_TOO_LONG);

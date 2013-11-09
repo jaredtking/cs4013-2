@@ -68,6 +68,17 @@ typedef struct Token
 
 #define SYM_TABLE_START_ADDR 2000
 
+#define RESULT_OK 0
+#define RESULT_LEXERR 1
+#define RESULT_SYNERR 2
+
+typedef struct ParserFiles
+{
+	FILE *listing;
+	FILE *source;
+	FILE *tokens;
+} ParserFiles;
+
 typedef struct ReservedWord
 {
 	char *name;
@@ -85,13 +96,16 @@ typedef struct MachineResult {
 	char *lexeme;
 	Token *token;
 	char *f;
+	int line_no;
 } MachineResult;
 
 char *get_next_line(FILE *source);
-MachineResult *get_next_token(FILE *source, FILE *tokens, FILE *listing, ReservedWord *reserved_words, SymbolTable *symbol_table);
+MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table);
 ReservedWord *tokenize_reserved_word_str (char *line);
+int token_type_to_int (TokenType type);
 TokenType int_to_token_type (int id);
 char *token_type_to_str (TokenType type);
 char *attribute_to_str (int attr);
+void lexerr(MachineResult *result, FILE *out);
 
 #endif
