@@ -7,7 +7,7 @@ TESTSDIR=tests
 OUTNAME=pascal
 
 CC=gcc
-CFLAGS=-Wall -I$(IDIR) -g
+CFLAGS=-Wall -I$(IDIR) -g -std=c99
 
 LIBS=
 
