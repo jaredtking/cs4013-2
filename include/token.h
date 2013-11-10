@@ -50,6 +50,8 @@ typedef struct Token
 	int attribute;
 } Token;
 
+#define RESERVED_WORD_DELIM "\t"
+
 #define MAX_LINE_LENGTH 72
 #define MAX_LINE_LENGTH_1 73
 
@@ -64,13 +66,17 @@ typedef struct Token
 #define ATTRIBUTE_DIV 991
 #define ATTRIBUTE_MOD 990
 
-#define RESERVED_WORD_DELIM "\t"
-
 #define SYM_TABLE_START_ADDR 2000
 
 #define RESULT_OK 0
 #define RESULT_LEXERR 1
 #define RESULT_SYNERR 2
+
+#define TOKEN_OPTION_NONE 0
+#define TOKEN_OPTION_NOP 2
+#define TOKEN_OPTION_SQUASH_ERRS 4
+
+#define PARSER_DATA files, reserved_words, symbol_table
 
 typedef struct ParserFiles
 {
@@ -100,7 +106,7 @@ typedef struct MachineResult {
 } MachineResult;
 
 char *get_next_line(FILE *source);
-MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table);
+MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table, int options);
 ReservedWord *tokenize_reserved_word_str (char *line);
 int token_type_to_int (TokenType type);
 TokenType int_to_token_type (int id);

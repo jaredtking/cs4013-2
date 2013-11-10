@@ -40,37 +40,43 @@ START_TEST (test_get_token)
 	ck_assert(files->source != NULL);
 
 	// program
-	MachineResult *res = get_next_token (files, reserved_words, symbol_table);
+	MachineResult *res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_PROGRAM);
 	ck_assert(res->token->attribute == 0);
 
 	// test
-	res = get_next_token (files, reserved_words, symbol_table);
+	res = get_next_token (PARSER_DATA, TOKEN_OPTION_NOP | TOKEN_OPTION_SQUASH_ERRS);
+	ck_assert(res != NULL);
+	ck_assert(res->token->type == TOKEN_ID);
+	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
+
+	// NOP
+	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_ID);
 	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 
 	// #
-	res = get_next_token (files, reserved_words, symbol_table);
+	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_NO_MATCH);
 
 	// @
-	res = get_next_token (files, reserved_words, symbol_table);
+	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_NO_MATCH);
 
 	// integer
-	res = get_next_token (files, reserved_words, symbol_table);
+	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_INT_TOO_LONG);
 
 	// real
-	res = get_next_token (files, reserved_words, symbol_table);
+	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_REAL_YY_TOO_LONG);

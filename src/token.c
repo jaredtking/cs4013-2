@@ -27,14 +27,24 @@ char *get_next_line(FILE *source)
 	return line;
 }
 
-MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table)
+MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table, int options)
 {
 	// remember where we were last by saving source file pointer
 	static FILE *s;
 
+	// save current line
 	static char l[MAX_LINE_LENGTH_1];
 	static char *f;
 	static int i = 0;
+
+	// options for things like NOP
+	static int o = 0;
+	static MachineResult *r;
+
+	if (o & TOKEN_OPTION_NOP && r != NULL) {
+		 o = options;
+		return r;
+	}
 
 	// grab another line
 	if (s != files->source || f - l > MAX_LINE_LENGTH || *f == 0)
@@ -52,28 +62,34 @@ MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, 
 			fprintf (files->listing, "%-8d%s\n", i, line);
 	}
 
-	MachineResult r = machine_omega(f, reserved_words, symbol_table);
-	r.line_no = i;
+	MachineResult result = machine_omega(f, reserved_words, symbol_table);
+	result.line_no = i;
 
-	MachineResult *result = (MachineResult *)malloc(sizeof(MachineResult));
-	memcpy(result, &r, sizeof(MachineResult));
+	MachineResult *resultPtr = (MachineResult *)malloc(sizeof(MachineResult));
+	memcpy(resultPtr, &result, sizeof(MachineResult));
 
 	// advance our internal pointer
-	f = r.f;
+	f = result.f;
 
-	if (result->token->type == TOKEN_WHITESPACE)
-		return get_next_token(files, reserved_words, symbol_table);
+	if (resultPtr->token->type == TOKEN_WHITESPACE)
+		return get_next_token(PARSER_DATA, options);
 
 	// write token to tokens file
 	if (files->tokens != NULL) {
-		fprintf (files->tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, result->lexeme, token_type_to_str(result->token->type), result->token->attribute, attribute_to_str(result->token->attribute));
+		fprintf (files->tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, resultPtr->lexeme, token_type_to_str(resultPtr->token->type), resultPtr->token->attribute, attribute_to_str(resultPtr->token->attribute));
 	}
 
 	// output errors to listing file
-	if (result->token->type == TOKEN_LEXERR)
-		lexerr(result, files->listing);
+	if (!(TOKEN_OPTION_SQUASH_ERRS & options) && resultPtr->token->type == TOKEN_LEXERR)
+		lexerr(resultPtr, files->listing);
 
-	return result;
+	// check for a nop
+	if (options & TOKEN_OPTION_NOP)
+		r = resultPtr;
+
+	o = options;
+
+	return resultPtr;
 }
 
 ReservedWord *tokenize_reserved_word_str (char *in)
@@ -84,7 +100,7 @@ ReservedWord *tokenize_reserved_word_str (char *in)
 	strcpy(line, in);
 
     // tokenize the line by tabs
-    char pieces[3][200];
+    char pieces[3][MAX_LINE_LENGTH];
     char *piece;
     int i = -1;
 
@@ -95,7 +111,7 @@ ReservedWord *tokenize_reserved_word_str (char *in)
 	    piece = strtok (NULL, RESERVED_WORD_DELIM);
 	}
 
-	word->name = malloc(201);
+	word->name = malloc(MAX_LINE_LENGTH);
 	strcpy(word->name, pieces[0]);
 
 	word->token = (Token *)malloc(sizeof(Token));
