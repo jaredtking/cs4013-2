@@ -109,7 +109,12 @@ int main(int argc, char **argv)
 
 	fprintf(stdout, "Parsing source file..\n");
 
-	int result = parse(parser_data);
+	parse(parser_data);
+
+	if (parser_data->result > 0)
+		fprintf(stderr, "Parsing was unsuccessful.\n");
+	else
+		fprintf(stdout, "Success\n");
 
 	fclose(parser_data->source);
 	fclose(parser_data->listing);
@@ -142,8 +147,5 @@ int main(int argc, char **argv)
 
 	fclose(f);
 
-	if (result == 0)
-		fprintf(stdout, "ok\n");
-
-	return(0);
+	return(parser_data->result);
 }

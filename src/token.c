@@ -81,7 +81,7 @@ MachineResult *get_next_token(ParserData *parser_data, int options)
 
 	// output errors to listing file
 	if (!(TOKEN_OPTION_SQUASH_ERRS & options) && resultPtr->token->type == TOKEN_LEXERR)
-		lexerr(resultPtr, parser_data->listing);
+		lexerr(resultPtr, parser_data);
 
 	// check for a nop
 	if (options & TOKEN_OPTION_NOP)
@@ -244,11 +244,11 @@ char *attribute_to_str (int attr)
 void lexerr(MachineResult *result, ParserData *parser_data)
 {
 	// output to console
-	fprintf (stderr, "%-8s%-30s%s on line %d", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme, result->line_no);
+	fprintf (stderr, "%-8s%s on line %d: \"%s\"\n", "LEXERR", attribute_to_str(result->token->attribute), result->line_no, result->lexeme);
 
 	// listing file
 	if (parser_data->listing != NULL)
-		fprintf (parser_data->listing, "%-8s%-30s%s", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
+		fprintf (parser_data->listing, "%-8s%-30s%s\n", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
 
 	parser_data->result |= PARSER_RESULT_LEXERR;
 }
