@@ -15,6 +15,8 @@ int main(int argc, char **argv)
 
 	FILE *f;
 
+	ParserData *parser_data = (ParserData *)malloc(sizeof(ParserData));
+
 	/* tokenize reserved words file */
 
 	char line[200];
@@ -38,18 +40,16 @@ int main(int argc, char **argv)
 		head = curr;
 	}
 
-	ReservedWord *reserved_words = head;
+	parser_data->reserved_words = head;
 	fclose(f);
 
 	fprintf(stdout,"ok\n");
 
-	ParserFiles *files = (ParserFiles *)malloc(sizeof(ParserFiles));
-
 	/* tokenize input source file */
 
-	files->source = fopen (argv[2], "r");
+	parser_data->source = fopen (argv[2], "r");
 
-	if (files->source == NULL)
+	if (parser_data->source == NULL)
 	{
 		fprintf (stderr, "Can't open source file!\n");
 		exit(1);
@@ -80,9 +80,9 @@ int main(int argc, char **argv)
 	// open listing file for writing
 	char *listing_filename = malloc(strlen(output_dir) + 9);
 	sprintf(listing_filename, "%s/listing", output_dir);
-	files->listing = fopen (listing_filename, "w");
+	parser_data->listing = fopen (listing_filename, "w");
 
-	if (files->listing == NULL)
+	if (parser_data->listing == NULL)
 	{
 		fprintf (stderr, "Can't create listing file at %s!\n", listing_filename);
 		exit(1);
@@ -91,29 +91,29 @@ int main(int argc, char **argv)
 	// open tokens file for writing
 	char *tokens_filename = malloc(strlen(output_dir) + 9);
 	sprintf(tokens_filename, "%s/tokens", output_dir);
-	files->tokens = fopen (tokens_filename, "w");
+	parser_data->tokens = fopen (tokens_filename, "w");
 
-	if (files->tokens == NULL)
+	if (parser_data->tokens == NULL)
 	{
 		fprintf (stderr, "Can't create tokens file at %s!\n", tokens_filename);
 		exit(1);
 	}
 
 	// token file header
-	fprintf (files->tokens, "%-10s%-20s%-20s%s\n", "Line No.", "Lexeme", "TOKEN-TYPE", "ATTRIBUTE");
+	fprintf (parser_data->tokens, "%-10s%-20s%-20s%s\n", "Line No.", "Lexeme", "TOKEN-TYPE", "ATTRIBUTE");
 
 	// initalize symbol table
-	SymbolTable *symbol_table = (SymbolTable *)malloc(sizeof(SymbolTable));
-	symbol_table->symbol = NULL;
-	symbol_table->next = NULL;
+	parser_data->symbol_table = (SymbolTable *)malloc(sizeof(SymbolTable));
+	parser_data->symbol_table->symbol = NULL;
+	parser_data->symbol_table->next = NULL;
 
 	fprintf(stdout, "Parsing source file..\n");
 
-	int result = parse(files, reserved_words, symbol_table);
+	int result = parse(parser_data);
 
-	fclose(files->source);
-	fclose(files->listing);
-	fclose(files->tokens);
+	fclose(parser_data->source);
+	fclose(parser_data->listing);
+	fclose(parser_data->tokens);
 
 	// open symbol table file for writing
 	char *symtable_filename = malloc(strlen(output_dir) + 9);
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	fprintf (f, "%-5s%s\n", "Loc.", "ID");
 
 	// write ids to symbol table
-	SymbolTable *s = symbol_table;
+	SymbolTable *s = parser_data->symbol_table;
 	int i = 0;
 	while (s != NULL && s->symbol != NULL)
 	{

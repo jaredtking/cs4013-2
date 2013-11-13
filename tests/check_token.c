@@ -20,66 +20,81 @@ END_TEST
 
 START_TEST (test_get_token)
 {
+	ParserData *parser_data = (ParserData *)malloc(sizeof(ParserData));
+	parser_data->tokens = NULL;
+	parser_data->listing = NULL;
+	parser_data->source = fopen("tests/test_get_token.pas", "r");
+
+	ck_assert(parser_data->source != NULL);
+
 	// build a reserved word list
 	ReservedWord *reserved_words = tokenize_reserved_word_str ("program\t1000\t0");
 	ReservedWord *next = tokenize_reserved_word_str ("begin\t1007\t0");
 	ReservedWord *next2 = tokenize_reserved_word_str ("while\t1013\t0");
 	reserved_words->next = next;
 	next->next = next2;	
+	parser_data->reserved_words = reserved_words;
 
 	// symbol table
 	SymbolTable *symbol_table = (SymbolTable *)malloc(sizeof(SymbolTable));
 	symbol_table->symbol = NULL;
 	symbol_table->next = NULL;
+	parser_data->symbol_table = symbol_table;
 
-	ParserFiles *files = (ParserFiles *)malloc(sizeof(ParserFiles));
-	files->tokens = NULL;
-	files->listing = NULL;
-	files->source = fopen("tests/test_get_token.pas", "r");
-
-	ck_assert(files->source != NULL);
-
-	// program
-	MachineResult *res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
+	// start checking tokens - program
+	MachineResult *res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_PROGRAM);
 	ck_assert(res->token->attribute == 0);
 
 	// test
-	res = get_next_token (PARSER_DATA, TOKEN_OPTION_NOP | TOKEN_OPTION_SQUASH_ERRS);
+	res = get_next_token (parser_data, TOKEN_OPTION_NOP | TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_ID);
 	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 
 	// NOP
-	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
+	for (int i = 0; i < 5; i++) {
+		res = get_next_token (parser_data, TOKEN_OPTION_NOP | TOKEN_OPTION_SQUASH_ERRS);
+		ck_assert(res != NULL);
+		ck_assert(res->token->type == TOKEN_ID);
+		ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
+	}
+
+	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_ID);
 	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 
 	// #
-	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
+	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_NO_MATCH);
 
 	// @
-	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
+	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_NO_MATCH);
 
 	// integer
-	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
+	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_INT_TOO_LONG);
 
 	// real
-	res = get_next_token (PARSER_DATA, TOKEN_OPTION_SQUASH_ERRS);
+	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_REAL_YY_TOO_LONG);
+
+	// eof
+	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
+	ck_assert(res != NULL);
+	ck_assert(res->token->type == TOKEN_EOF);
+	ck_assert(res->token->attribute == 0);
 }
 END_TEST
 

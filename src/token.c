@@ -27,7 +27,7 @@ char *get_next_line(FILE *source)
 	return line;
 }
 
-MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, SymbolTable *symbol_table, int options)
+MachineResult *get_next_token(ParserData *parser_data, int options)
 {
 	// remember where we were last by saving source file pointer
 	static FILE *s;
@@ -47,22 +47,22 @@ MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, 
 	}
 
 	// grab another line
-	if (s != files->source || f - l > MAX_LINE_LENGTH || *f == 0)
+	if (s != parser_data->source || f - l > MAX_LINE_LENGTH || *f == 0)
 	{
-		s = files->source;
+		s = parser_data->source;
 
-		char *line = get_next_line(files->source);
+		char *line = get_next_line(parser_data->source);
 
 		strcpy(l, line);
 		f = l;
 		i++;
 
 		// output line to listing file
-		if (files->listing != NULL)
-			fprintf (files->listing, "%-8d%s\n", i, line);
+		if (parser_data->listing != NULL)
+			fprintf (parser_data->listing, "%-8d%s\n", i, line);
 	}
 
-	MachineResult result = machine_omega(f, reserved_words, symbol_table);
+	MachineResult result = machine_omega(f, parser_data->reserved_words, parser_data->symbol_table);
 	result.line_no = i;
 
 	MachineResult *resultPtr = (MachineResult *)malloc(sizeof(MachineResult));
@@ -72,16 +72,16 @@ MachineResult *get_next_token(ParserFiles *files, ReservedWord *reserved_words, 
 	f = result.f;
 
 	if (resultPtr->token->type == TOKEN_WHITESPACE)
-		return get_next_token(PARSER_DATA, options);
+		return get_next_token(parser_data, options);
 
 	// write token to tokens file
-	if (files->tokens != NULL) {
-		fprintf (files->tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, resultPtr->lexeme, token_type_to_str(resultPtr->token->type), resultPtr->token->attribute, attribute_to_str(resultPtr->token->attribute));
+	if (parser_data->tokens != NULL) {
+		fprintf (parser_data->tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, resultPtr->lexeme, token_type_to_str(resultPtr->token->type), resultPtr->token->attribute, attribute_to_str(resultPtr->token->attribute));
 	}
 
 	// output errors to listing file
 	if (!(TOKEN_OPTION_SQUASH_ERRS & options) && resultPtr->token->type == TOKEN_LEXERR)
-		lexerr(resultPtr, files->listing);
+		lexerr(resultPtr, parser_data->listing);
 
 	// check for a nop
 	if (options & TOKEN_OPTION_NOP)
@@ -241,19 +241,14 @@ char *attribute_to_str (int attr)
 	return str;
 }
 
-void lexerr(MachineResult *result, FILE *out)
+void lexerr(MachineResult *result, ParserData *parser_data)
 {
-	FILE *out2 = out;
-	if (out == NULL)
-		out2 = stderr;
+	// output to console
+	fprintf (stderr, "%-8s%-30s%s on line %d", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme, result->line_no);
 
-	fprintf (out2, "%-8s%-30s%s", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
+	// listing file
+	if (parser_data->listing != NULL)
+		fprintf (parser_data->listing, "%-8s%-30s%s", "LEXERR", attribute_to_str(result->token->attribute), result->lexeme);
 
-	if (out == NULL)
-		fprintf (out2, " on line %d", result->line_no);
-
-	fprintf (out2, "\n");
-
-	if (out != NULL)
-		lexerr(result, NULL);
+	parser_data->result |= PARSER_RESULT_LEXERR;
 }
