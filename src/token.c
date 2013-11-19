@@ -63,6 +63,10 @@ MachineResult *get_next_token(ParserData *parser_data, int options)
 	}
 
 	MachineResult result = machine_omega(f, parser_data->reserved_words, parser_data->symbol_table);
+
+	// do not increment line counter for eof
+	if (result.token->type == TOKEN_EOF) i--;
+
 	result.line_no = i;
 
 	MachineResult *resultPtr = (MachineResult *)malloc(sizeof(MachineResult));
@@ -79,9 +83,15 @@ MachineResult *get_next_token(ParserData *parser_data, int options)
 		fprintf (parser_data->tokens, "%-10d%-20s%-20s%-6d(%s)\n", i, resultPtr->lexeme, token_type_to_str(resultPtr->token->type), resultPtr->token->attribute, attribute_to_str(resultPtr->token->attribute));
 	}
 
-	// output errors to listing file
-	if (!(TOKEN_OPTION_SQUASH_ERRS & options) && resultPtr->token->type == TOKEN_LEXERR)
-		lexerr(resultPtr, parser_data);
+	// handle lexical errors
+	if (resultPtr->token->type == TOKEN_LEXERR) {
+		// output errors to listing file
+		if (!(options & TOKEN_OPTION_SQUASH_ERRS))
+			lexerr(resultPtr, parser_data);
+
+		// do not return lexerr tokens
+		return get_next_token(parser_data, options);
+	}
 
 	// check for a nop
 	if (options & TOKEN_OPTION_NOP)

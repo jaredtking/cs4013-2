@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include "token.h"
 
-int parse(ParserData *parser_data);
+void parse(ParserData *parser_data);
 void match(TokenType t, ParserData *parser_data);
 
 void parse_program(ParserData *parser_data);
@@ -49,6 +49,7 @@ void parse_factor(ParserData *parser_data);
 void parse_factor_(ParserData *parser_data);
 void parse_sign(ParserData *parser_data);
 
+void synch(Production prod, MachineResult *tok, ParserData *parser_data);
 void synerr(TokenType *expected, int len, MachineResult *found, ParserData *parser_data);
 
 #endif

@@ -66,6 +66,7 @@ START_TEST (test_get_token)
 	ck_assert(res->token->type == TOKEN_ID);
 	ck_assert(res->token->attribute == SYM_TABLE_START_ADDR);
 
+/*
 	// #
 	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
@@ -89,12 +90,21 @@ START_TEST (test_get_token)
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_LEXERR);
 	ck_assert(res->token->attribute == MACHINE_ERR_REAL_YY_TOO_LONG);
-
+*/
+	
 	// eof
 	res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
 	ck_assert(res != NULL);
 	ck_assert(res->token->type == TOKEN_EOF);
 	ck_assert(res->token->attribute == 0);
+
+	// eof - multiple times
+	for (int i = 0; i < 5; i++) {
+		res = get_next_token (parser_data, TOKEN_OPTION_SQUASH_ERRS);
+		ck_assert(res != NULL);
+		ck_assert(res->token->type == TOKEN_EOF);
+		ck_assert(res->token->attribute == 0);
+	}
 }
 END_TEST
 
